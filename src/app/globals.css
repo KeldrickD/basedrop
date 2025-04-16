@@ -8,6 +8,22 @@
   --background-end-rgb: 255, 255, 255;
   --base-blue: #0052ff;
   --base-dark-blue: #00359E;
+  --color-background: #121212;
+  --color-surface: #1A1A1A;
+  --color-surface-dark: #0D0D0D;
+  --color-primary: #0052FF;
+  --color-accent-purple: #8C1AFF;
+  --color-accent-pink: #FF0080;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+  --color-text-disabled: rgba(255, 255, 255, 0.4);
+  --glow-primary: 0 0 12px rgba(0, 82, 255, 0.8);
+  --glow-subtle: 0 0 8px rgba(0, 82, 255, 0.4);
+  --glow-purple: 0 0 12px rgba(140, 26, 255, 0.8);
+  --glow-pink: 0 0 12px rgba(255, 0, 128, 0.8);
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,4 +52,98 @@ body {
   .input-field {
     @apply block w-full py-2 px-4 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
   }
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0% { box-shadow: var(--glow-subtle); }
+  50% { box-shadow: var(--glow-primary); }
+  100% { box-shadow: var(--glow-subtle); }
+}
+
+@keyframes neon-breathe {
+  0% { opacity: 0.8; text-shadow: 0 0 5px var(--color-primary), 0 0 10px var(--color-primary); }
+  50% { opacity: 1; text-shadow: 0 0 10px var(--color-primary), 0 0 20px var(--color-primary), 0 0 30px var(--color-primary); }
+  100% { opacity: 0.8; text-shadow: 0 0 5px var(--color-primary), 0 0 10px var(--color-primary); }
+}
+
+@keyframes scan-line {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+/* Focus styles for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: var(--glow-subtle);
+}
+
+/* Cyberpunk button styles */
+.btn-cyberpunk {
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition-normal);
+}
+
+.btn-cyberpunk:hover {
+  box-shadow: var(--glow-primary);
+}
+
+.btn-cyberpunk:active {
+  transform: translateY(1px);
+}
+
+.btn-cyberpunk::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 82, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 100% 200%;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  animation: scan-line 2s linear infinite;
+  pointer-events: none;
+}
+
+.btn-cyberpunk:hover::after {
+  opacity: 1;
+}
+
+/* Tooltip styling */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 10px;
+  padding: 4px 8px;
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  box-shadow: var(--glow-subtle);
+}
+
+.tooltip:hover::before {
+  opacity: 1;
 } 
