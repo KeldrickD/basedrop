@@ -1,0 +1,38 @@
+{
+  "name": "basedrop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "contract:compile": "npx hardhat compile",
+    "contract:deploy": "npx hardhat run scripts/deploy.js --network base"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.9.3",
+    "@tanstack/react-query": "^4.29.19",
+    "dotenv": "^16.5.0",
+    "ethers": "^5.7.2",
+    "next": "13.4.12",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "viem": "^1.10.14",
+    "wagmi": "^1.4.1",
+    "web3.storage": "^4.5.5"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@types/node": "^20.5.0",
+    "@types/react": "^18.2.18",
+    "@types/react-dom": "^18.2.7",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.46.0",
+    "eslint-config-next": "13.4.12",
+    "hardhat": "^2.17.1",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.3",
+    "typescript": "^5.1.6"
+  }
+}
