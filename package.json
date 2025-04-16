@@ -7,18 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "clean": "rimraf .next && rimraf node_modules/.cache",
     "contract:compile": "npx hardhat compile",
     "contract:deploy": "npx hardhat run scripts/deploy.js --network base"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.9.3",
     "@tanstack/react-query": "^4.29.19",
-    "dotenv": "^16.5.0",
+    "connectkit": "^1.5.3",
+    "dotenv": "^16.4.5",
     "ethers": "^5.7.2",
+    "framer-motion": "^10.16.4",
     "next": "13.4.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "viem": "^1.10.14",
+    "viem": "^1.19.0",
     "wagmi": "^1.4.1",
     "web3.storage": "^4.5.5"
   },
@@ -32,6 +35,7 @@
     "eslint-config-next": "13.4.12",
     "hardhat": "^2.17.1",
     "postcss": "^8.4.31",
+    "rimraf": "^3.0.2",
     "tailwindcss": "^3.3.3",
     "typescript": "^5.1.6"
   }

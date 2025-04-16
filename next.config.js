@@ -5,6 +5,11 @@ const nextConfig = {
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
     return config;
   },
+  // Disable tracing to prevent file permission issues
+  experimental: {
+    outputFileTracingExcludes: ["**/*"],
+    outputFileTracing: false,
+  },
 }
 
 module.exports = nextConfig; 

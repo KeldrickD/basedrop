@@ -21,7 +21,7 @@ export default function Header() {
           {isConnected ? (
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
+                {address && `${address.slice(0, 6)}...${address.slice(-4)}`}
               </div>
               <button 
                 onClick={() => disconnect()}
@@ -33,7 +33,7 @@ export default function Header() {
           ) : (
             <button 
               onClick={() => connect()}
-              className="base-button"
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md font-medium transition duration-200"
             >
               Connect Wallet
             </button>

@@ -1,14 +1,40 @@
 'use client';
 
 import Header from '@/components/Header';
-import { useState, useEffect } from 'react';
+import CSVPreview from '@/components/CSVPreview';
+import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
+import { useTheme } from '@/contexts/ThemeContext';
+import StepWizard from '@/components/StepWizard';
+import { NetworkMonitor } from '@/utils/offlineQueue';
+import analytics from '@/utils/analytics';
 
 export default function Home() {
   const { isConnected } = useAccount();
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isOnline, setIsOnline] = useState(true);
+  const { theme, toggleTheme } = useTheme();
+
+  // Track network status
+  useEffect(() => {
+    setIsOnline(NetworkMonitor.isOnline);
+    
+    const cleanup = NetworkMonitor.onNetworkStatusChange((online) => {
+      setIsOnline(online);
+      if (online) {
+        // Process any queued operations when back online
+      }
+    });
+    
+    return cleanup;
+  }, []);
+
+  // Report page view for analytics
+  useEffect(() => {
+    analytics.trackPageView('home');
+  }, []);
   
   // Handle keyboard navigation
   useEffect(() => {
@@ -17,14 +43,105 @@ export default function Home() {
       if (e.altKey && e.key === 's') {
         setIsSidebarExpanded(prev => !prev);
       }
+      
+      // Toggle theme with Alt+T
+      if (e.altKey && e.key === 't') {
+        toggleTheme();
+      }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [toggleTheme]);
+
+  // Create wizard steps
+  const wizardSteps = [
+    {
+      id: 'upload',
+      title: 'Upload CSV',
+      content: (
+        <div className="py-4">
+          <h3 className="text-xl font-bold mb-4 font-['Rajdhani',sans-serif]">Upload Recipient List</h3>
+          <p className="mb-6 text-[var(--color-text-secondary)]">
+            Upload a CSV file with wallet addresses and token amounts for your airdrop
+          </p>
+          <CSVPreview
+            onFileLoaded={(file, data) => {
+              console.log('CSV loaded:', data.length, 'rows');
+              analytics.trackEvent('file_uploaded', { 
+                fileSize: file.size,
+                rowCount: data.length
+              });
+            }}
+          />
+        </div>
+      ),
+    },
+    {
+      id: 'configure',
+      title: 'Configure',
+      content: (
+        <div className="py-4">
+          <h3 className="text-xl font-bold mb-4 font-['Rajdhani',sans-serif]">Configure Airdrop</h3>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[var(--color-text-secondary)] mb-2">Token Type</label>
+              <select className="w-full bg-[var(--color-surface-dark)] border border-[var(--color-primary)]/30 rounded-md p-2 text-[var(--color-text-primary)]">
+                <option value="erc20">ERC-20 Token</option>
+                <option value="erc721">ERC-721 NFT</option>
+                <option value="erc1155">ERC-1155 Multi-Token</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[var(--color-text-secondary)] mb-2">Token Address</label>
+              <input 
+                type="text" 
+                placeholder="0x..." 
+                className="w-full bg-[var(--color-surface-dark)] border border-[var(--color-primary)]/30 rounded-md p-2 text-[var(--color-text-primary)]"
+              />
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'review',
+      title: 'Review',
+      content: (
+        <div className="py-4">
+          <h3 className="text-xl font-bold mb-4 font-['Rajdhani',sans-serif]">Review & Deploy</h3>
+          <div className="bg-[var(--color-surface-dark)] p-4 rounded-md mb-6 border border-[var(--color-primary)]/30">
+            <div className="flex justify-between py-2 border-b border-[var(--color-primary)]/10">
+              <span className="text-[var(--color-text-secondary)]">Recipients</span>
+              <span className="font-bold">125 addresses</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-[var(--color-primary)]/10">
+              <span className="text-[var(--color-text-secondary)]">Token</span>
+              <span className="font-bold">BaseCoin (BC)</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-[var(--color-primary)]/10">
+              <span className="text-[var(--color-text-secondary)]">Total Amount</span>
+              <span className="font-bold">10,000 BC</span>
+            </div>
+            <div className="flex justify-between py-2">
+              <span className="text-[var(--color-text-secondary)]">Estimated Gas</span>
+              <span className="font-bold">~0.025 ETH</span>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+  ];
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] font-['Inter',sans-serif]">
+    <main className="min-h-screen bg-[var(--color-background)] text-[var(--color-text-primary)] font-['Inter',sans-serif]" id="main-content">
+      {/* Network status indicator */}
+      {!isOnline && (
+        <div className="fixed top-0 left-0 w-full bg-[var(--color-accent-pink)] text-white py-1 px-4 text-center z-50 text-sm">
+          You are currently offline. Changes will be queued and processed when you reconnect.
+        </div>
+      )}
+      
       {/* Sidebar */}
       <div className={`fixed left-0 top-0 h-full bg-[var(--color-surface)] z-30 transition-all duration-300 pt-16 shadow-[var(--glow-subtle)] ${isSidebarExpanded ? 'w-64' : 'w-16'}`}
            aria-label="Navigation sidebar">
@@ -145,10 +262,28 @@ export default function Home() {
           </ul>
         </nav>
         
+        {/* Theme toggle in sidebar */}
+        <div className="absolute bottom-12 left-0 right-0 px-4 text-center">
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center justify-center py-2 px-3 rounded-md hover:bg-[var(--color-primary)]/10 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode (Alt+T)`}
+          >
+            <span className="material-icons">
+              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
+            {isSidebarExpanded && (
+              <span className="ml-2">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            )}
+          </button>
+        </div>
+        
         {/* Keyboard shortcuts info */}
         {isSidebarExpanded && (
           <div className="absolute bottom-4 left-0 right-0 px-4 py-2 text-xs text-[var(--color-text-secondary)]">
             <p className="mb-1"><kbd className="px-1 py-0.5 bg-[var(--color-surface-dark)] rounded">Alt+S</kbd> Toggle sidebar</p>
+            <p><kbd className="px-1 py-0.5 bg-[var(--color-surface-dark)] rounded">Alt+T</kbd> Toggle theme</p>
           </div>
         )}
       </div>
@@ -193,6 +328,10 @@ export default function Home() {
                               font-['Rajdhani',sans-serif] tracking-wider text-lg animate-[pulse-glow_4s_ease-in-out_infinite]
                               focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
                     aria-label="Connect your wallet"
+                    onClick={() => {
+                      // This would typically be handled by your wallet connector
+                      analytics.trackEvent('wallet_connect_attempt');
+                    }}
                   >
                     Connect Wallet
                   </button>
@@ -200,65 +339,17 @@ export default function Home() {
               ) : (
                 <div>
                   <h2 className="text-2xl font-bold mb-6 font-['Rajdhani',sans-serif] text-[var(--color-text-primary)]">Create New Airdrop</h2>
-                  <p className="mb-8 text-[var(--color-text-secondary)] font-['Roboto_Mono',monospace]">Your wallet is connected! Launch your airdrop in minutes.</p>
                   
-                  {/* Stepper */}
-                  <div className="flex mb-10 justify-between relative">
-                    <div className="flex-1 relative">
-                      <div className="h-2 bg-[var(--color-primary)] rounded-full"></div>
-                      <div className="absolute -top-1 -left-2 w-6 h-6 bg-[var(--color-primary)] rounded-full flex items-center justify-center shadow-[var(--glow-primary)]">1</div>
-                      <div className="absolute -bottom-8 left-0 text-xs text-[var(--color-text-primary)] font-['Roboto_Mono',monospace]">Upload CSV</div>
-                    </div>
-                    <div className="flex-1 relative">
-                      <div className="h-2 bg-[var(--color-accent-purple)]/40 rounded-full"></div>
-                      <div className="absolute -top-1 -left-2 w-6 h-6 bg-[var(--color-surface)] border border-[var(--color-accent-purple)] text-[var(--color-accent-purple)] rounded-full flex items-center justify-center">2</div>
-                      <div className="absolute -bottom-8 left-0 text-xs text-[var(--color-accent-purple)]/80 font-['Roboto_Mono',monospace]">Configure</div>
-                    </div>
-                    <div className="flex-1 relative">
-                      <div className="h-2 bg-[var(--color-accent-purple)]/40 rounded-full"></div>
-                      <div className="absolute -top-1 -left-2 w-6 h-6 bg-[var(--color-surface)] border border-[var(--color-accent-purple)] text-[var(--color-accent-purple)] rounded-full flex items-center justify-center">3</div>
-                      <div className="absolute -bottom-8 left-0 text-xs text-[var(--color-accent-purple)]/80 font-['Roboto_Mono',monospace]">Deploy</div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-16">
-                    <div className="border-2 border-dashed border-[var(--color-primary)]/50 rounded-lg p-8 text-center 
-                                    hover:border-[var(--color-primary)] transition-colors duration-300 bg-[var(--color-primary)]/5
-                                    focus-within:border-[var(--color-primary)] focus-within:shadow-[var(--glow-subtle)]"
-                         tabIndex={0}
-                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') document.getElementById('file-upload')?.click(); }}
-                         role="button"
-                         aria-label="Drop CSV file here or press Enter to browse files">
-                      <p className="text-xl mb-4 font-['Roboto_Mono',monospace]">Drop CSV file here</p>
-                      <p className="text-[var(--color-text-secondary)] mb-6">or</p>
-                      <button 
-                        className="btn-cyberpunk bg-transparent border border-[var(--color-primary)] text-[var(--color-primary)] 
-                                  px-6 py-2 rounded hover:bg-[var(--color-primary)] hover:text-white transition-all duration-300
-                                  focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                        onClick={() => document.getElementById('file-upload')?.click()}
-                      >
-                        Browse Files
-                      </button>
-                      <input 
-                        type="file" 
-                        id="file-upload" 
-                        className="hidden" 
-                        accept=".csv" 
-                        aria-label="Upload CSV file"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="mt-8 text-right">
-                    <Link 
-                      href="/configure" 
-                      className="btn-cyberpunk inline-block bg-[var(--color-primary)] text-white px-8 py-3 rounded-md 
-                                 hover:bg-[var(--color-primary)]/90 transition-all duration-300 font-['Rajdhani',sans-serif] 
-                                 tracking-wider text-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-                    >
-                      Next Step
-                    </Link>
-                  </div>
+                  {/* Step Wizard */}
+                  <StepWizard 
+                    steps={wizardSteps}
+                    onComplete={() => {
+                      console.log('Wizard completed');
+                      analytics.trackEvent('airdrop_created', {
+                        wizardCompleted: true
+                      });
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -322,10 +413,13 @@ export default function Home() {
                 <span className="material-icons text-sm">code</span>
               </button>
               <button 
+                onClick={toggleTheme}
                 className="text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] transition-colors"
-                aria-label="Toggle theme"
+                aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
-                <span className="material-icons text-sm">dark_mode</span>
+                <span className="material-icons text-sm">
+                  {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                </span>
               </button>
             </div>
           </div>
